@@ -1,45 +1,40 @@
-name: llm-evaluation-suite
-description: >
-  A three-task LLM evaluation suite covering summarization, arithmetic reasoning,
-  and sentiment classification. Each task calls an OpenAI-compatible API and
-  returns a reward score in [0, 1].
+name: openenv-agent
+version: 1.0
+description: A three-task LLM evaluation environment for Hugging Face Spaces.
+
+entrypoint:
+  url: https://huggingface.co/spaces/theepanss/openenv-agent
 
 model:
   provider: openai-compatible
-  name: "${MODEL_NAME}"
-  base_url: "${API_BASE_URL}"
-
-tasks:
-  - id: task1
-    name: Text Summarization
-    description: Summarize a passage about AI in one sentence.
-    grader: graders/grader1.py
-    reward_range: [0.0, 1.0]
-
-  - id: task2
-    name: Arithmetic Reasoning
-    description: Solve a word problem involving prices and return the correct total.
-    grader: graders/grader2.py
-    reward_range: [0.0, 1.0]
-
-  - id: task3
-    name: Sentiment Classification
-    description: Classify the sentiment of three product reviews.
-    grader: graders/grader3.py
-    reward_range: [0.0, 1.0]
+  name: ${MODEL_NAME}
+  base_url: ${API_BASE_URL}
 
 endpoints:
   reset:
     method: POST
     path: /reset
-    description: Reset environment state.
 
   step:
     method: POST
     path: /step
-    description: Execute the next task step and return reward.
 
   state:
     method: GET
     path: /state
-    description: Return current environment state.
+
+tasks:
+  - id: task1
+    observation_space: text
+    action_space: integer
+    grader: graders/grader1.py
+
+  - id: task2
+    observation_space: text
+    action_space: integer
+    grader: graders/grader2.py
+
+  - id: task3
+    observation_space: text
+    action_space: integer
+    grader: graders/grader3.py

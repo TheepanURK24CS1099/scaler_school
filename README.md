@@ -1,3 +1,13 @@
+---
+title: LLM Evaluation Suite
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_file: app.py
+pinned: false
+---
+
 # LLM Evaluation Suite
 
 A three-task LLM evaluation suite for Hugging Face Space deployment.

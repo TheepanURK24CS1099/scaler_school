@@ -26,42 +26,60 @@ def home():
                 <title>OpenEnv Agent</title>
                 <style>
                     body {
-                        font-family: Inter, Arial, sans-serif;
                         margin: 0;
                         min-height: 100vh;
                         display: grid;
                         place-items: center;
+                        font-family: Inter, Arial, sans-serif;
                         background: linear-gradient(135deg, #0f172a, #1e293b);
                         color: #e2e8f0;
                     }
                     .card {
-                        max-width: 720px;
-                        padding: 32px;
-                        border-radius: 20px;
-                        background: rgba(15, 23, 42, 0.75);
-                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+                        width: min(760px, calc(100vw - 32px));
+                        padding: 36px;
+                        border-radius: 24px;
+                        background: rgba(15, 23, 42, 0.82);
                         border: 1px solid rgba(148, 163, 184, 0.2);
+                        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
                     }
-                    h1 { margin-top: 0; font-size: 2rem; }
-                    p { line-height: 1.6; color: #cbd5e1; }
+                    h1 {
+                        margin: 0 0 12px;
+                        font-size: clamp(2rem, 4vw, 3rem);
+                    }
+                    p {
+                        margin: 0 0 18px;
+                        font-size: 1.05rem;
+                        line-height: 1.7;
+                        color: #cbd5e1;
+                    }
+                    .endpoints {
+                        display: grid;
+                        gap: 10px;
+                        margin-top: 18px;
+                        padding: 0;
+                        list-style: none;
+                    }
+                    .endpoint {
+                        padding: 12px 16px;
+                        border-radius: 14px;
+                        background: rgba(30, 41, 59, 0.8);
+                        border: 1px solid rgba(148, 163, 184, 0.16);
+                        font-size: 1rem;
+                    }
                     code {
-                        display: inline-block;
-                        padding: 2px 8px;
-                        border-radius: 999px;
-                        background: rgba(51, 65, 85, 0.8);
-                        color: #f8fafc;
+                        color: #7dd3fc;
+                        font-weight: 700;
                     }
-                    ul { padding-left: 20px; }
                 </style>
             </head>
             <body>
                 <main class="card">
                     <h1>OpenEnv Agent is running</h1>
                     <p>This Space is live and serving the API endpoints used by the evaluator.</p>
-                    <ul>
-                        <li><code>POST /reset</code></li>
-                        <li><code>POST /step</code></li>
-                        <li><code>GET /state</code></li>
+                    <ul class="endpoints">
+                        <li class="endpoint"><code>POST /reset</code></li>
+                        <li class="endpoint"><code>POST /step</code></li>
+                        <li class="endpoint"><code>GET /state</code></li>
                     </ul>
                 </main>
             </body>

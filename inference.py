@@ -6,12 +6,15 @@ load_dotenv()
 
 API_BASE_URL = os.getenv("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME")
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=HF_TOKEN
-)
+
+def get_client():
+    if not API_BASE_URL or not HF_TOKEN:
+        raise RuntimeError(
+            "Missing API configuration. Set API_BASE_URL and HF_TOKEN (or OPENAI_API_KEY)."
+        )
+    return OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 def run_task(task_module, task_name):
     print(f"[STEP] running {task_name}")
@@ -27,6 +30,8 @@ def grade_task(grader_module, output, task_name):
 
 def main():
     print("[START] inference")
+
+    client = get_client()
 
     from tasks import task1, task2, task3
     from graders import grader1, grader2, grader3

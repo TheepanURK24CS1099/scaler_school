@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -8,16 +8,20 @@ load_dotenv()
 
 API_BASE_URL = os.getenv("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME")
-HF_TOKEN = os.getenv("HF_TOKEN")
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 
 app = FastAPI(title="Inference API")
 
 state = {"step": 0, "results": {}, "status": "idle"}
 
-client = OpenAI(
-    base_url=API_BASE_URL,
-    api_key=HF_TOKEN
-)
+
+def get_client():
+    if not API_BASE_URL or not HF_TOKEN:
+        raise HTTPException(
+            status_code=503,
+            detail="Missing API configuration. Set API_BASE_URL and HF_TOKEN (or OPENAI_API_KEY).",
+        )
+    return OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 
 @app.post("/reset")
@@ -44,6 +48,7 @@ def step():
         return {"status": "done", "results": state["results"]}
 
     task_mod, grader_mod, name = task_map[current]
+    client = get_client()
     output = task_mod.run(client, MODEL_NAME)
     reward = grader_mod.grade(output)
     state["results"][name] = reward

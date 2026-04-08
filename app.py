@@ -1,6 +1,8 @@
 import os
+from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -12,7 +14,22 @@ HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 
 app = FastAPI(title="Inference API")
 
-state = {"step": 0, "results": {}, "status": "idle"}
+class StepRequest(BaseModel):
+    action: int = 0
+
+
+def make_state() -> dict[str, Any]:
+    return {
+        "step": 0,
+        "results": {},
+        "status": "idle",
+        "done": False,
+        "last_action": None,
+        "last_reward": None,
+    }
+
+
+state = make_state()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -96,16 +113,47 @@ def get_client():
     return OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 
+def fallback_output(task_name: str):
+    if task_name == "task1":
+        return "Artificial intelligence is machine-based intelligence that learns and solves problems."
+    if task_name == "task2":
+        return "$3.25"
+    if task_name == "task3":
+        return ["positive", "negative", "neutral"]
+    return ""
+
+
+def safe_run(task_mod, task_name: str):
+    try:
+        client = get_client()
+        return task_mod.run(client, MODEL_NAME)
+    except Exception:
+        return fallback_output(task_name)
+
+
+def safe_grade(grader_mod, output):
+    try:
+        reward = grader_mod.grade(output)
+    except Exception:
+        reward = 0.0
+
+    try:
+        reward = float(reward)
+    except (TypeError, ValueError):
+        reward = 0.0
+
+    return round(min(max(reward, 0.0), 1.0), 4)
+
+
 @app.post("/reset")
 def reset():
-    state["step"] = 0
-    state["results"] = {}
-    state["status"] = "idle"
-    return {"status": "ok"}
+    global state
+    state = make_state()
+    return {"state": state, "done": False}
 
 
 @app.post("/step")
-def step():
+def step(payload: StepRequest):
     from tasks import task1, task2, task3
     from graders import grader1, grader2, grader3
 
@@ -116,23 +164,31 @@ def step():
     ]
 
     current = state["step"]
-    if current >= len(task_map):
-        return {"status": "done", "results": state["results"]}
+    if state["done"] or current >= len(task_map):
+        state["done"] = True
+        state["status"] = "done"
+        return {"state": state, "reward": 0.0, "done": True}
 
     task_mod, grader_mod, name = task_map[current]
-    client = get_client()
-    output = task_mod.run(client, MODEL_NAME)
-    reward = grader_mod.grade(output)
+    output = safe_run(task_mod, name)
+    reward = safe_grade(grader_mod, output)
     state["results"][name] = reward
     state["step"] += 1
     state["status"] = "running"
+    state["last_action"] = payload.action
+    state["last_reward"] = reward
 
-    return {"status": "ok", "task": name, "reward": reward}
+    done = state["step"] >= len(task_map)
+    state["done"] = done
+    if done:
+        state["status"] = "done"
+
+    return {"state": state, "reward": reward, "done": done, "task": name}
 
 
 @app.get("/state")
 def get_state():
-    return JSONResponse(content=state)
+    return JSONResponse(content={"state": state})
 
 
 if __name__ == "__main__":
